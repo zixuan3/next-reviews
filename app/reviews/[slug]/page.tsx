@@ -19,8 +19,8 @@ export async function generateStaticParams(): Promise<ReviewPageParams[]> {
 export async function generateMetadata({
   params,
 }: ReviewPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const review = await getReview(slug);
+  const resolvedParams = await params; // Ensure `params` is awaited
+  const review = await getReview(resolvedParams.slug);
   return {
     title: review.title,
   };
