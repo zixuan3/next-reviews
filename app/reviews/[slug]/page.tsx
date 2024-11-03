@@ -8,7 +8,7 @@ interface ReviewPageParams {
 }
 
 interface ReviewPageProps {
-  params: ReviewPageParams;
+  params: Promise<ReviewPageParams>;
 }
 
 export async function generateStaticParams(): Promise<ReviewPageParams[]> {
