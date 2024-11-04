@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default async function HomePage() {
   const featuredReview: Review = await getFeaturedReview();
-  console.log("[HomePage] rendering");
+  //console.log("[HomePage] rendering");
 
   return (
     <>
