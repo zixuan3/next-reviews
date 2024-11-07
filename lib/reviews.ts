@@ -1,23 +1,23 @@
-import matter from "gray-matter";
 import { marked } from "marked";
 import qs from "qs";
 
 const CMS_URL = "http://localhost:1337";
 
+interface CmsItem {
+  id: number;
+  attributes: any;
+}
+
 export interface Review {
   slug: string;
   title: string;
+  subtitle: string;
   date: string;
   image: string;
 }
 
 export interface FullReview extends Review {
   body: string;
-}
-
-export async function getFeaturedReview(): Promise<Review> {
-  const reviews = await getReviews();
-  return reviews[0];
 }
 
 export async function getReview(slug: string): Promise<FullReview> {
@@ -42,12 +42,12 @@ export async function getReview(slug: string): Promise<FullReview> {
     date: '2024-11-03',
     image: '/images/hollow-knight.jpg',
 */
-export async function getReviews() {
+export async function getReviews(pageSize: number): Promise<Review[]> {
   const { data } = await fetchReviews({
     fields: ["slug", "title", "subtitle", "publishedAt"],
     populate: { image: { fields: ["url"] } },
     sort: ["publishedAt:desc"],
-    pagination: { pageSize: 6 },
+    pagination: { pageSize },
   });
   return data.map(toReview);
 }
@@ -73,11 +73,12 @@ export async function fetchReviews(parameters) {
   return await response.json();
 }
 
-function toReview(item) {
+function toReview(item: CmsItem): Review {
   const { attributes } = item;
   return {
     slug: attributes.slug,
     title: attributes.title,
+    subtitle: attributes.subtitle,
     date: attributes.publishedAt.slice(0, "yyyy-mm-dd".length),
     image: CMS_URL + attributes.image.data.attributes.url,
   };
