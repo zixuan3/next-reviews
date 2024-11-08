@@ -3,21 +3,28 @@ import Link from "next/link";
 import Heading from "@/components/Heading";
 import { getReviews } from "@/lib/reviews";
 import Image from "next/image";
+import PaginationBar from "@/components/PaginationBar";
+
+interface ReviewsPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
 
 export const metadata: Metadata = {
   title: "Reviews",
 };
 
-export default async function ReviewsPage() {
-  const reviews = await getReviews(6);
-  console.log(
-    "[ReviewsPage] rendering:",
-    reviews.map((review) => review.slug).join(", ")
-  );
+const PAGE_SIZE = 6;
+
+export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const page = parsePageParam(resolvedSearchParams.page);
+  const { reviews, pageCount } = await getReviews(PAGE_SIZE, page);
+  console.log("[ReviewsPage] rendering:", page);
 
   return (
     <>
       <Heading>Reviews</Heading>
+      <PaginationBar href="/reviews" page={page} pageCount={pageCount} />
       <ul className="flex flex-row flex-wrap gap-3">
         {reviews.map((review, index) => (
           <li
@@ -42,4 +49,14 @@ export default async function ReviewsPage() {
       </ul>
     </>
   );
+}
+
+function parsePageParam(paramValue: string): number {
+  if (paramValue) {
+    const page = parseInt(paramValue);
+    if (isFinite(page) && page > 0) {
+      return page;
+    }
+  }
+  return 1;
 }

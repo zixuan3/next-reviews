@@ -1,6 +1,8 @@
 import { marked } from "marked";
 import qs from "qs";
 
+export const CACHE_TAG_REVIEWS = "reviews";
+
 const CMS_URL = "http://localhost:1337";
 
 interface CmsItem {
@@ -20,13 +22,21 @@ export interface FullReview extends Review {
   body: string;
 }
 
-export async function getReview(slug: string): Promise<FullReview> {
+export interface PaginatedReviews {
+  pageCount: number;
+  reviews: Review[];
+}
+
+export async function getReview(slug: string): Promise<FullReview | null> {
   const { data } = await fetchReviews({
     filters: { slug: { $eq: slug } },
     fields: ["slug", "title", "subtitle", "publishedAt", "body"],
     populate: { image: { fields: ["url"] } },
     pagination: { pageSize: 1, withCount: false },
   });
+  if (data.length === 0) {
+    return null;
+  }
   const item = data[0];
   // Await the result of marked to get the string
   const body = await marked(data[0].attributes.body);
@@ -36,20 +46,17 @@ export async function getReview(slug: string): Promise<FullReview> {
   };
 }
 
-/*
-    slug: 'hollow-knight',
-    title: 'Hollow Knight',
-    date: '2024-11-03',
-    image: '/images/hollow-knight.jpg',
-*/
-export async function getReviews(pageSize: number): Promise<Review[]> {
-  const { data } = await fetchReviews({
+export async function getReviews(
+  pageSize: number,
+  page?: number
+): Promise<PaginatedReviews> {
+  const { data, meta } = await fetchReviews({
     fields: ["slug", "title", "subtitle", "publishedAt"],
     populate: { image: { fields: ["url"] } },
     sort: ["publishedAt:desc"],
-    pagination: { pageSize },
+    pagination: { pageSize, page },
   });
-  return data.map(toReview);
+  return { pageCount: meta.pagination.pageCount, reviews: data.map(toReview) };
 }
 
 export async function getSlugs() {
@@ -66,7 +73,11 @@ export async function fetchReviews(parameters) {
     `${CMS_URL}/api/reviews?` +
     qs.stringify(parameters, { encodeValuesOnly: true });
   //console.log("[FetchReviews]:", url);
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    next: {
+      tags: [CACHE_TAG_REVIEWS],
+    },
+  });
   if (!response.ok) {
     throw new Error(`CMS returned ${response.status} for ${url}`);
   }

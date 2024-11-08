@@ -3,6 +3,7 @@ import Heading from "@/components/Heading";
 import ShareButtons from "@/components/ShareButtons";
 import { getReview, getSlugs } from "@/lib/reviews";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 interface ReviewPageParams {
   slug: string;
@@ -23,6 +24,9 @@ export async function generateMetadata({
 }: ReviewPageProps): Promise<Metadata> {
   const resolvedParams = await params; // Ensure `params` is awaited
   const review = await getReview(resolvedParams.slug);
+  if (!review) {
+    notFound();
+  }
   return {
     title: review.title,
   };
@@ -32,6 +36,9 @@ export default async function ReviewPage({ params }: ReviewPageProps) {
   const { slug } = await params;
   console.log("[ReviewPage] rendering:", slug);
   const review = await getReview(slug);
+  if (!review) {
+    notFound();
+  }
 
   return (
     <>
